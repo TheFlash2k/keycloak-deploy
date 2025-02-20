@@ -13,6 +13,53 @@ Before starting, ensure you have the following:
 - **Docker Engine**: [Install Docker](https://docs.docker.com/get-docker/).
 - **Docker Compose**: [Install Docker Compose](https://docs.docker.com/compose/install/).
 
+## Architecture
+
+```mermaid
+flowchart TB
+    subgraph Internet
+        User((User))
+    end
+
+    subgraph DockerCompose["Docker Compose Environment"]
+        subgraph Nginx["Nginx Container"]
+            NginxProxy["Nginx Reverse Proxy"]
+            style NginxProxy fill:#99c1f1
+        end
+        
+        subgraph Certbot["Certbot Container"]
+            CertbotService["SSL Certificate Manager"]
+            style CertbotService fill:#8ff0a4
+        end
+        
+        subgraph Keycloak["Keycloak Container"]
+            KeycloakService["Identity and Access Management"]
+            style KeycloakService fill:#c061cb
+        end
+        
+        subgraph PostgreSQL["PostgreSQL Container"]
+            Database[(PostgreSQL Database)]
+            style Database fill:#f9f06b
+        end
+        
+        %% Connections
+        User -->|HTTPS| NginxProxy
+        NginxProxy -->|Forward Auth Requests| KeycloakService
+        KeycloakService -->|Store Data| Database
+        CertbotService -->|Manage SSL| NginxProxy
+        
+        %% Volume connections
+        Database -->|"Persistent Volume"| DbData[("PostgreSQL Data")]
+        style DbData fill:#f9f06b,stroke-dasharray: 5 5
+        NginxProxy -->|"Shared Volume"| CertVolume[("SSL Certificates")]
+        style CertVolume fill:#8ff0a4,stroke-dasharray: 5 5
+    end
+
+    classDef container fill:#f5f5f5,stroke:#333,stroke-width:2px
+    class DockerCompose,Nginx,Certbot,Keycloak,PostgreSQL container
+```
+
+
 ## Installation
 
 ### 1. Clone the Repository
